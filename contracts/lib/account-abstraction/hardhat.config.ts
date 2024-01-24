@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
-import { HardhatUserConfig } from 'hardhat/config'
+import 'accountaabstraction'
 import 'hardhat-deploy'
 import '@nomiclabs/hardhat-etherscan'
 
@@ -35,7 +35,7 @@ const optimizedComilerSettings = {
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
-const config: HardhatUserConfig = {
+module.exports  = {
   solidity: {
     compilers: [{
       version: '0.8.15',
@@ -72,4 +72,3 @@ if (process.env.COVERAGE != null) {
   config.solidity = config.solidity.compilers[0]
 }
 
-export default config
