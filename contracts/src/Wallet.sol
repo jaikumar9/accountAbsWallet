@@ -5,10 +5,11 @@ import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 
 
-abstract contract Wallet is BaseAccount {
+abstract contract Wallet is BaseAccount, Initializable  {
 
     address public immutable walletFactory;
     IEntryPoint private immutable _entryPoint;
@@ -20,6 +21,9 @@ abstract contract Wallet is BaseAccount {
         _entryPoint = anEntryPoint;
         walletFactory = ourWalletFactory;
     }
+    
+    // Events 
+    event WalletInitialized(IEntryPoint indexed entryPoint, address[] owners);
 
     function entryPoint() public view override returns (IEntryPoint) {
     return _entryPoint;
@@ -46,4 +50,35 @@ abstract contract Wallet is BaseAccount {
         // If all signatures are valid (i.e., they all belong to the owners), return 0
         return 0;
     }
+
+function _initializeWallet(address[] memory _owners) internal {
+  _initialize(initialOwners);
+}
+
+function _initialize(address[] memory initialOwners) internal {
+      require(initialOwners.length > 0, "no owners");
+      owners  = initialOwners;
+      emit WalletInitialized(_entryPoint, initialOwners);
+}
+
+function _call(address target, uint256 value, bytes memory data) internal {
+    (bool success, bytes memory result) = target.call{value: value}(data);
+    if (!success) {
+        assembly {
+            // The assembly code here skips the first 32 bytes of the result, which contains the length of data.
+            // It then loads the actual error message using mload and calls revert with this error message.
+            revert(add(result, 32), mload(result))
+        }
+    }
+}
+
+modifier _requireFromEntryPointOrFactory() {
+
+    require(
+        msg.sender == address(_entryPoint) || msg.sender == walletFactory,
+        "only entry point or wallet factory can call"
+    );
+    _;
+}
+
 }
