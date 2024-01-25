@@ -7,10 +7,7 @@ import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-
-
-abstract contract Wallet is BaseAccount, Initializable  {
-
+abstract contract Wallet is BaseAccount, Initializable {
     address public immutable walletFactory;
     IEntryPoint private immutable _entryPoint;
 
@@ -21,19 +18,18 @@ abstract contract Wallet is BaseAccount, Initializable  {
         _entryPoint = anEntryPoint;
         walletFactory = ourWalletFactory;
     }
-    
-    // Events 
+
+    // Events
     event WalletInitialized(IEntryPoint indexed entryPoint, address[] owners);
 
     function entryPoint() public view override returns (IEntryPoint) {
-    return _entryPoint;
+        return _entryPoint;
     }
 
     function _validateSignature(
         UserOperation calldata userOp, // UserOperation data structure passed as input
         bytes32 userOpHash // Hash of the UserOperation without the signatures
     ) internal view override returns (uint256) {
-        
         // Convert the userOpHash to an Ethereum Signed Message Hash
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         // Decode the signatures from the userOp and store them in a bytes array in memory
@@ -51,34 +47,53 @@ abstract contract Wallet is BaseAccount, Initializable  {
         return 0;
     }
 
-function _initializeWallet(address[] memory _owners) internal {
-  _initialize(initialOwners);
-}
+    function _initializeWallet(address[] memory _owners) internal {
+        _initialize(initialOwners);
+    }
 
-function _initialize(address[] memory initialOwners) internal {
-      require(initialOwners.length > 0, "no owners");
-      owners  = initialOwners;
-      emit WalletInitialized(_entryPoint, initialOwners);
-}
+    function _initialize(address[] memory initialOwners) internal {
+        require(initialOwners.length > 0, "no owners");
+        owners = initialOwners;
+        emit WalletInitialized(_entryPoint, initialOwners);
+    }
 
-function _call(address target, uint256 value, bytes memory data) internal {
-    (bool success, bytes memory result) = target.call{value: value}(data);
-    if (!success) {
-        assembly {
-            // The assembly code here skips the first 32 bytes of the result, which contains the length of data.
-            // It then loads the actual error message using mload and calls revert with this error message.
-            revert(add(result, 32), mload(result))
+    function _call(address target, uint256 value, bytes memory data) internal {
+        (bool success, bytes memory result) = target.call{value: value}(data);
+        if (!success) {
+            assembly {
+                // The assembly code here skips the first 32 bytes of the result, which contains the length of data.
+                // It then loads the actual error message using mload and calls revert with this error message.
+                revert(add(result, 32), mload(result))
+            }
         }
     }
+
+    modifier _requireFromEntryPointOrFactory() {
+        require(
+            msg.sender == address(_entryPoint) || msg.sender == walletFactory,
+            "only entry point or wallet factory can call"
+        );
+        _;
+    }
+
+   function execute(
+    address dest,
+    uint256 value,
+    bytes calldata func
+) external _requireFromEntryPointOrFactory {
+    _call(dest, value, func);
 }
 
-modifier _requireFromEntryPointOrFactory() {
-
-    require(
-        msg.sender == address(_entryPoint) || msg.sender == walletFactory,
-        "only entry point or wallet factory can call"
-    );
-    _;
+function executeBatch(
+    address[] calldata dests,
+    uint256[] calldata values,
+    bytes[] calldata funcs
+) external _requireFromEntryPointOrFactory {
+    require(dests.length == funcs.length, "wrong dests lengths");
+    require(values.length == funcs.length, "wrong values lengths");
+    for (uint256 i = 0; i < dests.length; i++) {
+        _call(dests[i], values[i], funcs[i]);
+    }
 }
 
 }
