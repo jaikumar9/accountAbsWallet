@@ -6,8 +6,11 @@ import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
 
-abstract contract Wallet is BaseAccount, Initializable {
+abstract contract Wallet is BaseAccount, Initializable, UUPSUpgradeable, TokenCallbackHandler {
+
     address public immutable walletFactory;
     IEntryPoint private immutable _entryPoint;
 
@@ -58,7 +61,7 @@ abstract contract Wallet is BaseAccount, Initializable {
     }
 
     function _call(address target, uint256 value, bytes memory data) internal {
-        (bool success, bytes memory result) = target.call{value: value}(data);
+        (bool success, bytes memory result) = target.call{value: value}(data); //  data = method id for pointing to the method to be called from the target function.
         if (!success) {
             assembly {
                 // The assembly code here skips the first 32 bytes of the result, which contains the length of data.
@@ -95,5 +98,24 @@ function executeBatch(
         _call(dests[i], values[i], funcs[i]);
     }
 }
+
+function _authorizeUpgrade(address) internal view override _requireFromEntryPointOrFactory {}
+
+
+// Helper Functions 
+
+function encodeSignatures(bytes[] memory signatures) public pure returns (bytes memory) {
+    return abi.encode(signatures);
+}
+
+function getDeposit() public view returns (uint256) {
+    return entryPoint().balanceOf(address(this));
+}
+
+function addDeposit() public payable {
+    entryPoint().depositTo{value: msg.value}(address(this));
+}
+receive() external payable {}
+
 
 }

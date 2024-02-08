@@ -143,5 +143,5 @@ abstract contract UUPSUpgradeable is IERC1822Proxiable {
             // The implementation is not UUPS
             revert ERC1967Utils.ERC1967InvalidImplementation(newImplementation);
         }
-    }
+    } // the try...catch block ensures that only compatible UUPS implementations are used for upgrades, preventing potential security vulnerabilities or errors.
 }
