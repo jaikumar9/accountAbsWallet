@@ -113,7 +113,7 @@ function getDeposit() public view returns (uint256) {
 }
 
 function addDeposit() public payable {
-    entryPoint().depositTo{value: msg.value}(address(this));
+    entryPoint().depositTo({value: msg.value}(address(this)));
 }
 receive() external payable {}
 
