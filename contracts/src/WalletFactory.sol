@@ -39,13 +39,11 @@ function createAccount(address[] memory owners,uint256 salt) external returns (W
         return Wallet(payable(addr));
     }
 
-    // If the code is empty, deploy a new Wallet
+    // If the code is empty, deploy a new Wallet   -- For Creating a new wallet using the proxy contract
     bytes memory walletInit = abi.encodeCall(Wallet.initialize, owners);
     ERC1967Proxy proxy = new ERC1967Proxy{salt: bytes32(salt)}(address(walletImplementation),walletInit);
 
     // Return the newly deployed Wallet
     return Wallet(payable(address(proxy)));
 }
-
-
 }
