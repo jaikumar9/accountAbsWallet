@@ -73,7 +73,7 @@ interface IEntryPoint is IStakeManager, INonceManager {
      * error case when a signature aggregator fails to verify the aggregated signature it had created.
      */
     error SignatureValidationFailed(address aggregator);
-    
+
     /**
      * Successful result from simulateValidation.
      * @param returnInfo gas and time-range returned values

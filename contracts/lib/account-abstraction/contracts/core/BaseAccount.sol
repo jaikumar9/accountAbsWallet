@@ -28,7 +28,7 @@ abstract contract BaseAccount is IAccount {
     function getNonce() public view virtual returns (uint256) {
         return entryPoint().getNonce(address(this), 0);
     }
-    
+
     /**
      * return the entryPoint used by this account.
      * subclass should return the current entryPoint used by this account.
