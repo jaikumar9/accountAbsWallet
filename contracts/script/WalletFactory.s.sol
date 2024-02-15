@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import "forge-std/Script.sol";
 import "../src/WalletFactory.sol";
-import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {IEntryPoint} from "lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 contract WalletFactoryScript is Script {
     // Address of the EntryPoint contract on Sepolia

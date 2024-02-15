@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.20;
 
-import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
-import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
-import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
-import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
+import {IEntryPoint} from "lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {BaseAccount} from "lib/account-abstraction/contracts/core/BaseAccount.sol";
+import {UserOperation} from "lib/account-abstraction/contracts/interfaces/UserOperation.sol";
+import {ECDSA} from "lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {Initializable} from "lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "lib/openzeppelin-contracts/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {TokenCallbackHandler} from "lib/account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol";
 
-abstract contract Wallet is BaseAccount, Initializable, UUPSUpgradeable, TokenCallbackHandler {
+contract Wallet is BaseAccount, Initializable, UUPSUpgradeable, TokenCallbackHandler {
 
     address public immutable walletFactory;
     IEntryPoint private immutable _entryPoint;
@@ -29,10 +29,7 @@ abstract contract Wallet is BaseAccount, Initializable, UUPSUpgradeable, TokenCa
         return _entryPoint;
     }
 
-    function _validateSignature(
-        UserOperation calldata userOp, // UserOperation data structure passed as input
-        bytes32 userOpHash // Hash of the UserOperation without the signatures
-    ) internal view override returns (uint256) {
+    function _validateSignature(UserOperation calldata userOp,bytes32 userOpHash) internal view override returns (uint256) {
         // Convert the userOpHash to an Ethereum Signed Message Hash
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         // Decode the signatures from the userOp and store them in a bytes array in memory
@@ -50,15 +47,15 @@ abstract contract Wallet is BaseAccount, Initializable, UUPSUpgradeable, TokenCa
         return 0;
     }
 
-    function _initializeWallet(address[] memory _owners) internal {
-        _initialize(initialOwners);
-    }
+    function initialize(address[] memory initialOwners) public initializer {
+    _initialize(initialOwners);
+}
 
-    function _initialize(address[] memory initialOwners) internal {
-        require(initialOwners.length > 0, "no owners");
-        owners = initialOwners;
-        emit WalletInitialized(_entryPoint, initialOwners);
-    }
+function _initialize(address[] memory initialOwners) internal {
+    require(initialOwners.length > 0, "no owners");
+    owners = initialOwners;
+    emit WalletInitialized(_entryPoint, initialOwners);
+}
 
     function _call(address target, uint256 value, bytes memory data) internal {
         (bool success, bytes memory result) = target.call{value: value}(data); //  data = method id for pointing to the method to be called from the target function.
